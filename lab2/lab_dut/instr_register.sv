@@ -18,10 +18,10 @@ import instr_register_pkg::*;  // user-defined types are defined in instr_regist
  input  address_t      read_pointer,
  output instruction_t  instruction_word
 );
- // timeunit 1ns/1ns;
+  //timeunit 1ns;
 
   instruction_t  iw_reg [0:31];  // an array of instruction_word structures
-
+  //TEMA : ADAUGA IN PACKAGE RESULT, tipul definit de noi, in dut, in functie de ce tip de opcode am, sa faca opratia.
   // write to the register
   always@(posedge clk, negedge reset_n)   // write into register
     if (!reset_n) begin
@@ -29,7 +29,16 @@ import instr_register_pkg::*;  // user-defined types are defined in instr_regist
         iw_reg[i] = '{opc:ZERO,default:0};  // reset to all zeros
     end
     else if (load_en) begin
-      iw_reg[write_pointer] = '{opcode,operand_a,operand_b};
+      case (opcode)
+      PASSA : iw_reg[write_pointer] = '{opcode, operand_a, operand_b, operand_a};
+      PASSB : iw_reg[write_pointer] = '{opcode, operand_a, operand_b, operand_b};
+      ADD   : iw_reg[write_pointer] = '{opcode, operand_a, operand_b, $signed(operand_a + operand_b)};
+      SUB   : iw_reg[write_pointer] = '{opcode, operand_a, operand_b, $signed(operand_a - operand_b)};
+      MULT  : iw_reg[write_pointer] = '{opcode, operand_a, operand_b, $signed(operand_a * operand_b)};
+      DIV   : iw_reg[write_pointer] = '{opcode, operand_a, operand_b, $signed(operand_a / operand_b)};
+      MOD   : iw_reg[write_pointer] = '{opcode, operand_a, operand_b, $signed(operand_a % operand_b)};
+    default : iw_reg[write_pointer] = '{opcode, operand_a, operand_b, 'b0};
+    endcase
     end
 
   // read from the register

@@ -3,7 +3,7 @@
  **********************************************************************/
 
 module top;
-  //timeunit 1ns/1ns;
+//  timeunit 1ns/1ns;
 
   // user-defined types are defined in instr_register_pkg.sv
   import instr_register_pkg::*;
@@ -11,7 +11,8 @@ module top;
   // clock variables
   logic clk;
   logic test_clk;
-  tb_ifc Lab1TSC();
+
+  tb_ifc myio (.clk(test_clk));
   // interconnecting signals
   //logic          load_en;
   //logic          reset_n;
@@ -20,30 +21,31 @@ module top;
   //address_t      write_pointer, read_pointer;
   //instruction_t  instruction_word;
 
+  instr_register_test test (.myio(myio));
   // instantiate testbench and connect ports
-  instr_register_test test (
-    .clk(test_clk),
-    .load_en(Lab1TSC.load_en),
-    .reset_n(Lab1TSC.reset_n),
-    .operand_a(Lab1TSC.operand_a),
-    .operand_b(Lab1TSC.operand_b),
-    .opcode(Lab1TSC.opcode),
-    .write_pointer(Lab1TSC.write_pointer),
-    .read_pointer(Lab1TSC.read_pointer),
-    .instruction_word(Lab1TSC.instruction_word)
-   );
+  //instr_register_test test (
+   // .clk(test_clk),
+   // .load_en(load_en),
+   // .reset_n(reset_n),
+   // .operand_a(operand_a),
+   // .operand_b(operand_b),
+   // .opcode(opcode),
+   // .write_pointer(write_pointer),
+   // .read_pointer(read_pointer),
+    //.instruction_word(instruction_word)
+  // );
 
   // instantiate design and connect ports
   instr_register dut (
     .clk(clk),
-    .load_en(Lab1TSC.load_en),
-    .reset_n(Lab1TSC.reset_n),
-    .operand_a(Lab1TSC.operand_a),
-    .operand_b(Lab1TSC.operand_b),
-    .opcode(Lab1TSC.opcode),
-    .write_pointer(Lab1TSC.write_pointer),
-    .read_pointer(Lab1TSC.read_pointer),
-    .instruction_word(Lab1TSC.instruction_word)
+    .load_en(myio.load_en),
+    .reset_n(myio.reset_n),
+    .operand_a(myio.operand_a),
+    .operand_b(myio.operand_b),
+    .opcode(myio.opcode),
+    .write_pointer(myio.write_pointer),
+    .read_pointer(myio.read_pointer),
+    .instruction_word(myio.instruction_word)
    );
 
   // clock oscillators

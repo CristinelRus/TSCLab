@@ -4,67 +4,100 @@
  * with constrained random test generation, functional coverage, and
  * a scoreboard for self-verification.
  **********************************************************************/
-tb_ifc Lab1TSC();
-module instr_register_test
+//DE RULAT CU 10 SEEDS
+module instr_register_test (tb_ifc myio);
+  //import instr_register_pkg::*;  // user-defined types //are defined in instr_register_pkg.sv
+  //(input  logic          clk,
+  // output logic          load_en,
+  // output logic          reset_n,
+  //output operand_t      operand_a,
+  //output operand_t      operand_b,
+  //output opcode_t       opcode,
+  //output address_t      write_pointer,
+  //output address_t      read_pointer,
+  //input  instruction_t  instruction_word
+  //);
+	//inafara de initial begin, tot intra in clasa(functii,taskuri, if)
+	//DEFINIRE CLASA:
+	//class nume
+	//virtual interface(tb_ifc.tb)
+	//..metode
+	//endclass
+  //timeunit 1ns/1ns;
+  import instr_register_pkg::*;
+  
+  //seedul este valoarea initiala cu care incepe randomizarea
 
-  import instr_register_pkg::*;  // user-defined types are defined in instr_register_pkg.sv
-  (
-   //input  logic          clk,
-   //output logic          Lab1TSC.load_en,
-   // output logic          Lab1TSC.reset_n,
-   // output operand_t      Lab1TSC.operand_a,
-   // output operand_t      Lab1TSC.operand_b,
-   //output opcode_t       Lab1TSC.opcode,
-   //output address_t      Lab1TSC.write_pointer,
-   //output address_t      Lab1TSC.read_pointer,
-   //input  instruction_t  Lab1TSC.instruction_word
-  );
-
- // timeunit 1ns/1ns;
-
-  int seed = 555;
-
-  initial begin
+class main_class;
+  virtual tb_ifc.tb myio;
+  //int seed = 555;
+  covergroup my_covergroup;
+  coverpoint myio.cb.operand_a
+  {
+    bins op_a = {[-15:15]};
+  }
+  coverpoint myio.cb.operand_b
+  {
+    bins op_b = {[0:15]};
+  }
+  coverpoint myio.cb.opcode
+  {
+    bins opcode ={[0:7]};
+  }
+  coverpoint 
+  endgroup ;
+  //pt rezultat
+  
+  function new(virtual tb_ifc.tb manio);
+	myio=manio;
+  endfunction;
+  
+  task run();
     $display("\n\n***********************************************************");
     $display(    "***  THIS IS NOT A SELF-CHECKING TESTBENCH (YET).  YOU  ***");
     $display(    "***  NEED TO VISUALLY VERIFY THAT THE OUTPUT VALUES     ***");
     $display(    "***  MATCH THE INPUT VALUES FOR EACH REGISTER LOCATION  ***");
     $display(    "***********************************************************");
-
+    $display(    "********************FIRST HEADER***************************");
     $display("\nReseting the instruction register...");
-    Lab1TSC.write_pointer  = 5'h00;         // initialize write pointer
-    Lab1TSC.read_pointer   = 5'h1F;         // initialize read pointer
-    Lab1TSC.load_en        = 1'b0;          // initialize load control line
-    Lab1TSC.reset_n       <= 1'b0;          // assert reset_n (active low)
-    repeat (2) @(posedge clk) ;     // hold in reset for 2 clock cycles
-    Lab1TSC.reset_n        = 1'b1;          // deassert reset_n (active low)
+    myio.cb.write_pointer <= 5'h00;         // initialize write pointer
+    myio.cb.read_pointer  <= 5'h1F;         // initialize read pointer
+    myio.cb.load_en       <= 1'b0;          // initialize load control line
+    myio.cb.reset_n       <= 1'b0;          // assert reset_n (active low)
+    repeat (2) @(posedge myio.cb) ;        // hold in reset for 2 clock cycles
+    myio.cb.reset_n       <= 1'b1;          // deassert reset_n (active low)
 
     $display("\nWriting values to register stack...");
-    @(posedge clk) load_en = 1'b1;  // enable writing to register
-    repeat (3) begin
-      @(posedge clk) randomize_transaction;
-      @(negedge clk) print_transaction;
+    @(posedge myio.cb) myio.cb.load_en <= 1'b1;  // enable writing to register
+    repeat (10) begin
+      @(posedge myio.cb) randomize_transaction;
+      @(negedge myio.cb) print_transaction;
     end
-    @(posedge clk) load_en = 1'b0;  // turn-off writing to register
+    @(posedge myio.cb) myio.cb.load_en <= 1'b0;  // turn-off writing to register
 
     // read back and display same three register locations
     $display("\nReading back the same register locations written...");
-    for (int i=0; i<=2; i++) begin
+    for (int i=9; i>=0; i--) begin
       // later labs will replace this loop with iterating through a
       // scoreboard to determine which addresses were written and
       // the expected values to be read back
-      @(posedge clk) read_pointer = i;
-      @(negedge clk) print_results;
+      @(posedge myio.cb) myio.cb.read_pointer <= i;
+      @(negedge myio.cb) print_results;
+    end
+	repeat (10) begin
+      @(posedge myio.cb) myio.cb.read_pointer <= $unsigned($random)%10;;
+      @(negedge myio.cb) print_results;
     end
 
-    @(posedge clk) ;
+
+    @(posedge myio.cb) ;
     $display("\n***********************************************************");
     $display(  "***  THIS IS NOT A SELF-CHECKING TESTBENCH (YET).  YOU  ***");
     $display(  "***  NEED TO VISUALLY VERIFY THAT THE OUTPUT VALUES     ***");
     $display(  "***  MATCH THE INPUT VALUES FOR EACH REGISTER LOCATION  ***");
     $display(  "***********************************************************\n");
     $finish;
-  end
+  endtask
 
   function void randomize_transaction;
     // A later lab will replace this function with SystemVerilog
@@ -73,26 +106,38 @@ module instr_register_test
     // The stactic temp variable is required in order to write to fixed
     // addresses of 0, 1 and 2.  This will be replaceed with randomizeed
     // write_pointer values in a later lab
-    //
+    // In funcite nu putem avea instructiuni temporale, in task da
     static int temp = 0;
-    Lab1TSC.operand_a     <= $random(seed)%16;                 // between -15 and 15
-    Lab1TSC.operand_b     <= $unsigned($random)%16;            // between 0 and 15
-    Lab1TSC.opcode        <= opcode_t'($unsigned($random)%8);  // between 0 and 7, cast to opcode_t type
-    Lab1TSC.write_pointer <= temp++;
+    myio.cb.operand_a     <= $urandom%16;                 // between -15 and 15
+    myio.cb.operand_b     <= $unsigned($urandom)%16;            // between 0 and 15
+    myio.cb.opcode        <= opcode_t'($unsigned($urandom)%8);  // between 0 and 7, cast to opcode_t type
+    myio.cb.write_pointer <= temp++;
   endfunction: randomize_transaction
 
   function void print_transaction;
-    $display("Writing to register location %0d: ", write_pointer);
-    $display("  opcode = %0d (%s)", opcode, opcode.name);
-    $display("  operand_a = %0d",   operand_a);
-    $display("  operand_b = %0d\n", operand_b);
+    $display("Writing at time: %0d nanoseconds", $time);
+    $display("Writing to register location %0d: ", myio.cb.write_pointer);
+    $display("  opcode = %0d (%s)", myio.cb.opcode, myio.cb.opcode.name);
+    $display("  operand_a = %0d",   myio.cb.operand_a);
+    $display("  operand_b = %0d\n", myio.cb.operand_b);
   endfunction: print_transaction
 
   function void print_results;
-    $display("Read from register location %0d: ", read_pointer);
-    $display("  opcode = %0d (%s)", instruction_word.opc, instruction_word.opc.name);
-    $display("  operand_a = %0d",   instruction_word.op_a);
-    $display("  operand_b = %0d\n", instruction_word.op_b);
+    //displaying time
+    $display("Printing at time: %0d nanoseconds", $time);
+    $display("Read from register location %0d: ", myio.cb.read_pointer);
+    $display("  opcode = %0d (%s)", myio.cb.instruction_word.opc, myio.cb.instruction_word.opc.name);
+    $display("  operand_a = %0d",   myio.cb.instruction_word.op_a);
+    $display("  operand_b = %0d", myio.cb.instruction_word.op_b);
+	$display("  result    = %0d\n", myio.cb.instruction_word.result);
   endfunction: print_results
+
+//endclass ;
+
+initial begin
+		main_class test_cl;
+		test_cl=new(myio);
+		test_cl.run(myio);
+	end
 
 endmodule: instr_register_test
